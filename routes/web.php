@@ -22,6 +22,8 @@ $router->post('/register','AuthController@register');
 
 
 //Board routes
-$router->get('/boards','BoardController@index');
+$router->get('/boards', 'BoardController@index');
 $router->post('/boards','BoardController@store');
 $router->get('/boards/{id}','BoardController@show');
+$router->put('/boards/{boards}','BoardController@update');
+$router->delete('boards/{boards}','BoardController@destroy');
