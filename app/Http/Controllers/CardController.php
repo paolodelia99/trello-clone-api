@@ -7,7 +7,7 @@ use App\Lists;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class ListController extends Controller
+class CardController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -20,12 +20,13 @@ class ListController extends Controller
     }
 
     /**
-     * Get a listing of the lists in the specified board.
+     * Get a listing of the card in the specified list.
      *
      * @param int $boardId
+     * @param int $listId
      * @return \Illuminate\Http\Response
      */    
-    public function index($boardId)
+    public function index($boardId,$listId)
     {
         $board=Board::find($boardId);
 
@@ -33,50 +34,59 @@ class ListController extends Controller
             return response()->json(['status' => 'error', 'message' => 'unauthorized'], 401);
         }
 
-        return response()->json(['lists'=>$board->lists]);
+        $list=$board->lists()->find($listId);
+
+        return response()->json(['cards'=>$list->cards]);
     }
 
 
     /**
-     * Get the specified list.
+     * Get the specified card.
      *
      * @param  int  $boardId
      * @param  int  $listId
+     * @param  int  $cardId
      * @return \Illuminate\Http\Response
     */
-    public function show($boardId,$listId)
+    public function show($boardId,$listId,$cardId)
     {
-        $board=Board::find($boardId);
+        $board = Board::find($boardId);
 
         if (Auth::user()->id !== $board->user_id) {
             return response()->json(['status' => 'error', 'message' => 'unauthorized'], 401);
         }
 
         $list = $board->lists()->find($listId);
+        $card = $list->cards()->find($cardId);
 
-
-        return response()->json(['status'=>'success','list'=>$list]);
+        return response()->json(['status'=>'success','card'=>$card]);
     }
 
 
     /**
-     * Store a newly created list in storage.
+     * Store a newly created card in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int $boardId
+     * @param  int  $listId
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, $boardId)
+    public function store(Request $request, $boardId,$listId)
     {
-        $this->validate($request,['name'=>'required']);
+        $this->validate($request,[
+            'name'=>'required',
+            'description'=>'required'
+            ]);
 
         $board=Board::find($boardId);
 
         if (Auth::user()->id !== $board->user_id) {
             return response()->json(['status' => 'error', 'message' => 'unauthorized'], 401);
         }
-        $board->lists()->create([
+
+        $board->lists()->find($listId)->cards()->create([
             'name'    => $request->name,
+            'description'=> $request->description
         ]);
 
         return response()->json(['message' => 'success'], 200);
@@ -84,27 +94,33 @@ class ListController extends Controller
 
 
     /**
-     * Edit the specified list.
+     * Edit the specified card.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $boardId
      * @param  int  $listId
+     * @param  int  $cardId
      * @return \Illuminate\Http\Response
     */
-    public function update(Request $request, $boardId,$listId)
+    public function update(Request $request, $boardId,$listId,$cardId)
     {
 
-        $this->validate($request,['name'=>'required']);
+         $this->validate($request,[
+            'name'=>'required',
+            'description'=>'required'
+            ]);
+
 
         $board = Board::find($boardId);
 
         if (Auth::user()->id !== $board->user_id) {
             return response()->json(['status' => 'error', 'message' => 'unauthorized'], 401);
         }
+        
+        $card=$board->lists()->find($listId)->cards()->find($cardId);
+        $card->update($request->all());
 
-        $board->update($request->all());
-
-        return response()->json(['message' => 'success', 'board' => $board], 200);
+        return response()->json(['message' => 'success', 'card' => $card], 200);
     }
 
     /**
@@ -112,20 +128,20 @@ class ListController extends Controller
      *
      * @param  int  $boardId
      * @param  int  $listId
+     * @param  int  $cardId
      * @return \Illuminate\Http\Response
      */
-    public function destroy($boardId,$listId)
+    public function destroy($boardId,$listId,$cardId)
     {
         $board=Board::find($boardId);
 
         if(Auth::user()->id !== $board->user_id) {
             return response()->json(['status'=>'error','message'=>'unauthorized'],401);
         }
+        $card=$board->lists()->find($listId)->cards()->find($cardId);
 
-        $list=$board->lists()->find($listId);
-
-        if ($list->delete()) {
-            return response()->json(['status' => 'success', 'message' => 'List Deleted Successfully']);
+        if ($card->delete()) {
+            return response()->json(['status' => 'success', 'message' => 'Card Deleted Successfully']);
         }
 
         return response()->json(['status' => 'error', 'message' => 'Something went wrong']);
