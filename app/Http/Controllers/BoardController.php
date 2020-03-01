@@ -38,7 +38,7 @@ class BoardController extends Controller
     public function show($id)
     {
        
-        $board = Board::findOrFail($boardId);
+        $board = Board::findOrFail($id);
 
         if (Auth::user()->id !== $board->user_id) {
             return response()->json(['status' => 'error', 'message' => 'unauthorized'], 401);
